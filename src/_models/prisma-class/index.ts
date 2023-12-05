@@ -5,3 +5,4 @@ export namespace PrismaModel {
 
   export const extraModels = [User];
 }
+//aaa
