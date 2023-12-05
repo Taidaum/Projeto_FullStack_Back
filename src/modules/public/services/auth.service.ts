@@ -53,9 +53,6 @@ export class AuthService {
       where: {
         email: decodedToken.email,
       },
-      include: {
-        profile: true,
-      },
     });
     if (!user?.isActive) return null;
     if (user) return user;

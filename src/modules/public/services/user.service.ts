@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { Prisma, User, UserProfile } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import * as jwt from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
 import { generatePasswordToken } from '../../../helpers/auth.helper';
@@ -57,19 +57,6 @@ export class UserService {
         password: encryptedPw,
         phone: model.phone,
         isActive: true,
-        profile: {
-          create: {
-            about: model.about,
-            address: model.address,
-            city: model.city,
-            cpf: model.cpf?.replace(/\D/gi, ''),
-            firstName: model.firstName,
-            lastName: model.lastName,
-            state: model.state?.toUpperCase(),
-            zipCode: model.zipCode.replace(/\D/gi, ''),
-            avatarImg: model.avatarImg,
-          },
-        },
       },
     });
 
@@ -97,22 +84,6 @@ export class UserService {
       throw new HttpException(ERRORS.USER.EMAIL_OR_PHONE_USED, HttpStatus.BAD_REQUEST);
     }
 
-    const profile: Partial<UserProfile> = getObjectWithoutUndefinedFields({
-      about: model.about,
-      address: model.address,
-      city: model.city,
-      cpf: model.cpf?.replace(/\D/gi, ''),
-      firstName: model.firstName,
-      lastName: model.lastName,
-      state: model.state?.toUpperCase(),
-      zipCode: model.zipCode.replace(/\D/gi, ''),
-      avatarImg: model.avatarImg,
-    });
-
-    if (!model.cpf) {
-      profile.cpf = null;
-    }
-
     return this.prisma.user.update({
       where: {
         id: userId,
@@ -120,9 +91,6 @@ export class UserService {
       data: {
         ...(model.email ? { email: model.email } : {}),
         ...(model.phone ? { phone: model.phone.replace(/\D/gi, '') } : {}),
-        profile: {
-          update: profile,
-        },
       },
     });
   }
@@ -154,29 +122,8 @@ export class UserService {
   }
 
   async delete(where: Prisma.UserWhereUniqueInput, userId: number) {
-    await this.prisma.userProfile.delete({
-      where: {
-        userId: userId,
-      },
-    });
     return this.prisma.user.delete({
       where,
     });
-  }
-
-  async createJwtToken(model: User, ip: string) {
-    const key = await this.configService.get('JWT_KEY');
-    const token = await jwt.sign(
-      {
-        ip,
-        email: model.email,
-      },
-      key,
-      {
-        expiresIn: '7d',
-      },
-    );
-
-    return token;
   }
 }

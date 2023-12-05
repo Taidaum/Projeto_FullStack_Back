@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Body, Controller, Get, Post, Req, Put, Inject, Delete } from '@nestjs/common';
 import { UpdateUserDto } from '../../../types/dtos/user.dto';
-import { UpdateUserProfileDto } from '../../../types/dtos/userProfile.dto';
 import { API_VERSIONS } from '../../../utils/consts';
 import { PrismaService } from '../../external/services/prisma.service';
 import { UserService } from '../services/user.service';
@@ -21,7 +20,7 @@ export class PublicUserController {
 
 
   @Post('')
-  async createUserProfile(@Body() model: UpdateUserProfileDto) {
+  async createUserProfile(@Body() model: UpdateUserDto) {
     const data = this.userService.createProfile(model);
 
     this.monitoringService.log('ERRO no post user');
@@ -39,42 +38,34 @@ export class PublicUserController {
   @Get('')
   async getList() {
 
-    const users = await this.prismaService.user.findMany({
-      include: {
-        profile: true,
-      },
-    });
+    const users = await this.prismaService.user.findMany({});
+
     const countUser = await this.userService.count();
 
     this.monitoringService.log('ERRO no get user');
 
-    return {
-      data: users,
-      total: countUser,
-    };
+    return users
   }
 
-  @Get(':id')
+  @Get(':search')
   async getOneProfile(@Req() req: any) {
 
-    const user = await this.userService.findOne({
-      where: { id: parseInt(req.params.id) },
-      include: {
-        profile: true,
+    const user = await this.prismaService.user.findMany({
+      where: {
+        email: {
+          contains: req.params.search
+        }
       },
     });
 
-    delete user.password;
-    delete user.UserPermission;
-
-    this.monitoringService.log('ERRO no get user/:id');
+    this.monitoringService.log('ERRO no get user/:search');
 
     return user;
   }
 
-  @Delete('delete')
-  async deleteUser(@Body() model: any) {
-    await this.userService.delete({ id: model.id }, model.id);
+  @Delete(':id')
+  async deleteUser(@Req() req: any) {
+    await this.userService.delete({ id: parseInt(req.params.id) }, parseInt(req.params.id));
 
     this.monitoringService.log('ERRO no delete user');
   }

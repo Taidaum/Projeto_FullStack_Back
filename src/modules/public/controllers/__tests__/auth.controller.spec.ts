@@ -13,7 +13,7 @@ describe('AuthModule - AuthController', () => {
     }).compile();
   });
 
-  describe('auth/login', () => {
+  describe('auth', () => {
     it('should fail authentication', async () => {
       const authController = app.get<AuthController>(AuthController);
 

@@ -16,14 +16,14 @@ export class AuthController {
     private authService: AuthService,
   ) {}
 
-  @Post('login')
+  @Post("")
   async login(@Body() model: LoginAuthDto, @Ip() ip: string): Promise<AuthLoginResponse> {
     const authUser = await this.authService.login(model);
     const token = await this.authService.createJwtToken(authUser, ip);
     // return { id: authUser.id, token };
 
-    this.monitoringService.log('ERRO no auth/login');
+    this.monitoringService.log('ERRO no auth');
 
-    return { id: authUser.id, token, permission: authUser?.UserPermission?.permission || null };
+    return { id: authUser.id, token };
   }
 }

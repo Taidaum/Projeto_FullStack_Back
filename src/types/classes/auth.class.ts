@@ -12,6 +12,4 @@ export class AuthLoginResponse {
   id: number;
 
   token: string;
-
-  permission?: any;
 }

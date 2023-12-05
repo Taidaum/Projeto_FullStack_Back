@@ -1,5 +1,4 @@
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
 import JWTMiddleware from '../../middlewares/jwt.middleware';
 import { ExternalModule } from '../external/external.module';
 import { MonitoringService } from '../monitoring/monitoring.service';
@@ -30,8 +29,7 @@ export class PublicModule implements NestModule {
     consumer
       .apply(JWTMiddleware)
       .exclude(
-        { path: 'auth/login', method: RequestMethod.POST },
-        { path: 'auth/register', method: RequestMethod.POST },
+        { path: 'auth', method: RequestMethod.POST },
       )
       .forRoutes(...controllers);
   }

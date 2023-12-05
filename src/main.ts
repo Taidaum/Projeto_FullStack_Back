@@ -19,7 +19,18 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
-  
+  const verifyTokenMiddleware = async (socket, next: (err?: any) => void) => {
+    const token = socket.handshake.auth.token; // Obtém o token do handshake
+    const key = process.env.JWT_KEY;
+
+    try {
+      // Verifica o token usando a mesma lógica de verificação usada no servidor HTTP
+      jwt.verify(token, key);
+      next(); // Chama o próximo middleware ou rota
+    } catch (error) {
+      next(new Error('Token inválido')); // Retorna um erro caso o token seja inválido
+    }
+  };
 
   app.useLogger(app.get(Logger));
   app.useGlobalPipes(new ValidationPipe());
@@ -30,25 +41,7 @@ async function bootstrap() {
     origin: '*',
   });
 
-  const swaggerPath = '/docs';
-
-  if (process.env.NODE_ENV === 'production') {
-    app.use(
-      swaggerPath,
-      basicAuth({
-        challenge: true,
-        users: { ['temp']: 'hyperomegalul123' },
-      }),
-    );
-  }
-
   app.use('/public', express.static(join(__dirname, '..', 'public')));
-
-  app.enableVersioning({
-    type: VersioningType.HEADER,
-    header: API_VERSION_HEADER,
-    defaultVersion: '1',
-  });
 
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
@@ -70,6 +63,7 @@ async function bootstrap() {
 
 
   const server = http.createServer(app.getHttpAdapter().getInstance());
+  
   const io = new socketio(server, {
     cors: {
       origin: '*',
@@ -77,14 +71,26 @@ async function bootstrap() {
   });
   // const io = new Server();
 
- 
+  io.use(verifyTokenMiddleware); // Usa o middleware para verificar o token
+
+  io.on('connection', (socket) => {
+    // A partir daqui, o token do usuário já foi verificado
+
+    socket.on('disconnect', () => {
+      console.log('Socket disconnected:', socket.id);
+    });
+
+    socket.on('user', () => {
+      io.emit('user');
+    });
+  });
 
   const port = process.env.PORT || 8000;
   await app.listen(port);
 
   const socketPort = process.env.SOCKET_PORT || 8080;
   server.listen(socketPort, async () => {
-    console.log(`Started with env ${process.env.APP_ENV} at http://localhost:${port}`);
+    console.log(`Started with env ${process.env.port} at http://localhost:${port}`);
   });
 }
 
